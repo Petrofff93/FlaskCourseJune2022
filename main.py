@@ -1,3 +1,4 @@
+from decouple import config
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api, Resource
@@ -6,7 +7,13 @@ from flask_migrate import Migrate
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://postgres:123321@localhost:5432/store'
+db_user = config('DB_USER')
+db_password = config('DB_PASSWORD')
+db_name = config('DB_NAME')
+db_port = config('DB_PORT')
+
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'{db_name}://{db_user}:{db_password}@localhost:{db_port}/store'
 
 db = SQLAlchemy(app)
 api = Api(app)
