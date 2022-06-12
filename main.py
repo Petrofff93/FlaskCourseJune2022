@@ -5,6 +5,7 @@ app = Flask(__name__)
 api = Api(app)
 
 
+# Creating the model class for the books
 class BookModel:
     _pk = 1
 
@@ -18,9 +19,11 @@ class BookModel:
         return self.__dict__
 
 
+# Generating an array with objects for the purpose of the course
 books = [BookModel(f"Title {i}", f"Author {i}") for i in range(1, 11)]
 
 
+# Class based view as a resource in order to test CRUD methods
 class Book(Resource):
     def get(self, pk):
         try:
@@ -50,6 +53,7 @@ class Book(Resource):
             return {"error": "Not Found"}, 404
 
 
+# Class based view in order to manipulate the books array
 class Books(Resource):
     def get(self):
         return {"data": [b.serialize() for b in books]}
