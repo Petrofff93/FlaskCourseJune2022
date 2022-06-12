@@ -1,74 +1,44 @@
 from flask import Flask, request
+from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api, Resource
+from flask_migrate import Migrate
+
 
 app = Flask(__name__)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://postgres:123321@localhost:5432/store'
+
+db = SQLAlchemy(app)
 api = Api(app)
+migrate = Migrate(app, db)
 
 
 # Creating the model class for the books
-class BookModel:
-    _pk = 1
+class BookModel(db.Model):
+    __tablename__ = 'books'
+    pk = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String, nullable=False)
+    author = db.Column(db.String, nullable=False)
+    description = db.Column(db.String, nullable=True)
 
-    def __init__(self, title, author):
-        self.pk = BookModel._pk
-        self.title = title
-        self.author = author
-        BookModel._pk += 1
+    def __repr__(self):
+        return f"<{self.pk}> {self.title} from {self.author}"
 
-    def serialize(self):
-        return self.__dict__
-
-
-# Generating an array with objects for the purpose of the course
-books = [BookModel(f"Title {i}", f"Author {i}") for i in range(1, 11)]
-
-
-# Class based view as a resource in order to test CRUD methods
-class Book(Resource):
-    def get(self, pk):
-        try:
-            book = [b for b in books if b.pk == pk][0]
-            return book.serialize()
-        except IndexError:
-            return {"error": "Not Found"}, 404
-
-    def put(self, pk):
-        try:
-            data = request.get_json()
-            book = [b for b in books if b.pk == pk][0]
-            book.title = data["title"]
-            book.author = data["author"]
-            return book.serialize(), 200
-        except IndexError:
-            return {"error": "Not Foubd"}, 404
-        except:
-            return {"error": "Bad Request"}, 400
-
-    def delete(self, pk):
-        try:
-            book = [b for b in books if b.pk == pk][0]
-            books.remove(book)
-            return 204
-        except IndexError:
-            return {"error": "Not Found"}, 404
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 # Class based view in order to manipulate the books array
 class Books(Resource):
-    def get(self):
-        return {"data": [b.serialize() for b in books]}
-
     def post(self):
-        try:
-            data = request.get_json()
-            book = BookModel(**data)
-            books.append(book)
-            return book.serialize(), 201
-        except Exception as ex:
-            return {"error": "Bad Request"}, 400
+        data = request.get_json()
+        new_book = BookModel(**data)
+        db.session.add(new_book)
+        db.session.commit()
+        return new_book.as_dict()
 
 
-api.add_resource(Book, "/<int:pk>")
+db.create_all()
 api.add_resource(Books, "/")
 
 if __name__ == "__main__":
