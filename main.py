@@ -35,7 +35,7 @@ class BookModel(db.Model):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
-# Class based view in order to manipulate the books array
+# Class based view in order to add books in the DB
 class Books(Resource):
     def post(self):
         data = request.get_json()
